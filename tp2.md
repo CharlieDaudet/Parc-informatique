@@ -27,8 +27,6 @@ Filesystem                Inodes IUsed   IFree IUse% Mounted on
 
 🌞 **Afficher l'heure et la date**
 
-- au format suivant : `dd/mm/yy hh:mm:ss`
-- **📎 commande `date`**
 
 ```bash
 [chachat@node1 ~]$  date +"%d/%m/%y %H:%M:%S"
@@ -45,7 +43,6 @@ Rocky Linux 9.5 (Blue Onyx)
 
 🌞 **Afficher la version du kernel en cours d'utilisation précise**
 
-- **📎 commande `uname`**
 
 ```bash
 [chachat@node1 ~]$ uname -r
