@@ -417,7 +417,7 @@ total 4
 
 🌞 **Adapter la conf NGINX**
 
-```
+```bash
 [chachat@web ~]$ sudo firewall-cmd --permanent --add-port=2512/tcp
 [sudo] password for chachat:
 success
@@ -611,7 +611,7 @@ Il tourne sur 19999
 ```
 🌞 **Visiter l'interface Web**
 
-```
+```bash
 [chachat@monitoring ~]$ curl -s http://10.1.1.2:19999 > output.txt
 [chachat@monitoring ~]$ head -n 7 output.txt
 <!doctype html><html lang="en" dir="ltr"><head><meta charset="utf-8"/><title>Netdata</title><script>const CONFIG = {
@@ -635,7 +635,7 @@ Il tourne sur 19999
 
 🌞 **Ajouter un check**
 
-```
+```bash
 [chachat@monitoring ~]$ sudo nano /etc/netdata/health.d/tcpcheck.conf
 [sudo] password for chachat:
 [chachat@monitoring ~]$ sudo systemctl restart netdata
@@ -649,7 +649,7 @@ jobs:
 ```
 
 🌞 **Ajouter un check**
-```
+```bash
 [chachat@monitoring ~]$ sudo nano /etc/netdata/health.d/tcpcheck.conf
 [chachat@monitoring ~]$ sudo systemctl restart netdata
 ```
