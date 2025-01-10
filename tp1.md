@@ -431,34 +431,255 @@ success
 ```
 
 
-
-
-
-
-- dans le fichier de conf principal
-  - vous supprimerez le bloc `server {}` repéré plus tôt pour que NGINX ne serve plus le site par défaut (parce que ça sert à rien le site par défaut)
-  - redémarrez NGINX pour que les changements prennent effet
-- créez un nouveau fichier de conf
-  - il doit être nommé correctement
-  - il doit être placé dans le bon dossier
-  - c'est quoi un "nom correct" et "le bon dossier" ?
-    - bah vous avez repéré dans la partie d'avant les fichiers qui sont inclus par le fichier de conf principal non ?
-    - créez votre fichier en conséquence
-  - redémarrez NGINX pour que les changements prennent effet
-  - le contenu doit être le suivant :
-    - il écoute sur un port que vous aurez déterminé aléatoirement avec `echo $RANDOM`
-      - n'oubliez pas d'ouvrir ce port dans le firewall, et fermer l'ancien
-    - il définit que le site web est stocké dans /var/www/tp1_parc
-
-```nginx
-server {
-  # le port choisi devra être obtenu avec un 'echo $RANDOM' là encore
-  listen <PORT>;
-
-  root /var/www/tp1_parc;
-}
-```
-
 🌞 **Visitez votre super site web**
 
-- toujours avec une commande `curl` depuis votre PC (ou un navigateur)
+
+
+
+
+# III. Monitoring et alerting
+
+
+
+## 1. Installation
+
+
+
+🌞 **Installer Netdata**
+
+```bash
+[chachat@monitoring ~]$ curl https://get.netdata.cloud/kickstart.sh > /tmp/netdata-kickstart.sh && sh /tmp/netdata-kickstart.sh --no-updates --stable-channel --disable-telemetry
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 93649  100 93649    0     0   241k      0 --:--:-- --:--:-- --:--:--  247k
+
+ --- Using /tmp/netdata-kickstart-ufOkOdkLF3 as a temporary directory. ---
+ --- Checking for existing installations of Netdata... ---
+ --- No existing installations of netdata found, assuming this is a fresh install. ---
+ --- Attempting to install using native packages... ---
+ --- Checking for availability of repository configuration package. ---
+[/tmp/netdata-kickstart-ufOkOdkLF3]$ /usr/bin/curl --fail -q -sSL --connect-timeout 10 --retry 3 --output /tmp/netdata-kickstart-ufOkOdkLF3/netdata-repo-4-1.noarch.rpm https://repo.netdata.cloud/repos/repoconfig/el/9/x86_64/netdata-repo-4-1.noarch.rpm
+ OK
+
+
+Root privileges required to run test -x //usr/libexec/netdata/netdata-updater.sh
+[/tmp/netdata-kickstart-ufOkOdkLF3]$ sudo test -x //usr/libexec/netdata/netdata-updater.sh
+ OK
+
+Root privileges required to run //usr/libexec/netdata/netdata-updater.sh --disable-auto-updates
+[/tmp/netdata-kickstart-ufOkOdkLF3]$ sudo //usr/libexec/netdata/netdata-updater.sh --disable-auto-updates
+Mon Dec 16 04:54:21 PM CET 2024 : INFO: netdata-updater.sh:  Auto-updates have been DISABLED.
+ OK
+
+Successfully installed the Netdata Agent.
+```
+
+
+
+## 2. Un peu d'analyse de service
+
+
+🌞 **Démarrer le service `netdata`**
+```bash
+
+[chachat@monitoring ~]$ sudo systemctl start netdata
+[chachat@monitoring ~]$ sudo systemctl start netdata
+[chachat@monitoring ~]$ sudo systemctl status netdata
+● netdata.service - Real time performance monitoring
+     Loaded: loaded (/usr/lib/systemd/system/netdata.service; enabled; preset: enab>
+     Active: active (running) since Mon 2024-12-16 16:57:09 CET; 1min 43s ago
+    Process: 2926 ExecStartPre=/bin/mkdir -p /var/cache/netdata (code=exited, statu>
+    Process: 2928 ExecStartPre=/bin/chown -R netdata /var/cache/netdata (code=exite>
+    Process: 2929 ExecStartPre=/bin/mkdir -p /run/netdata (code=exited, status=0/SU>
+    Process: 2930 ExecStartPre=/bin/chown -R netdata /run/netdata (code=exited, sta>
+   Main PID: 2931 (netdata)
+      Tasks: 90 (limit: 11083)
+     Memory: 121.8M
+        CPU: 4.103s
+     CGroup: /system.slice/netdata.service
+             ├─2931 /usr/sbin/netdata -P /run/netdata/netdata.pid -D
+             ├─2932 "spawn-plugins    " "  " "                        " "  "
+             ├─3099 bash /usr/libexec/netdata/plugins.d/tc-qos-helper.sh 1
+             ├─3116 /usr/libexec/netdata/plugins.d/apps.plugin 1
+             ├─3120 /usr/libexec/netdata/plugins.d/debugfs.plugin 1
+             ├─3121 /usr/libexec/netdata/plugins.d/ebpf.plugin 1
+             ├─3122 /usr/libexec/netdata/plugins.d/go.d.plugin 1
+             ├─3129 /usr/libexec/netdata/plugins.d/network-viewer.plugin 1
+             ├─3131 "spawn-setns                                         " " "
+             └─3137 /usr/libexec/netdata/plugins.d/systemd-journal.plugin 1
+
+Dec 16 16:58:43 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power>
+Dec 16 16:58:44 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power>
+Dec 16 16:58:45 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power>
+Dec 16 16:58:46 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power>
+Dec 16 16:58:47 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power>
+Dec 16 16:58:48 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power>
+lines 1-29...skipping...
+● netdata.service - Real time performance monitoring
+     Loaded: loaded (/usr/lib/systemd/system/netdata.service; enabled; preset: enabled)
+     Active: active (running) since Mon 2024-12-16 16:57:09 CET; 1min 43s ago
+    Process: 2926 ExecStartPre=/bin/mkdir -p /var/cache/netdata (code=exited, status=0/SUCCESS)
+    Process: 2928 ExecStartPre=/bin/chown -R netdata /var/cache/netdata (code=exited, status=0/SUCCESS)
+    Process: 2929 ExecStartPre=/bin/mkdir -p /run/netdata (code=exited, status=0/SUCCESS)
+    Process: 2930 ExecStartPre=/bin/chown -R netdata /run/netdata (code=exited, status=0/SUCCESS)
+   Main PID: 2931 (netdata)
+      Tasks: 90 (limit: 11083)
+     Memory: 121.8M
+        CPU: 4.103s
+     CGroup: /system.slice/netdata.service
+             ├─2931 /usr/sbin/netdata -P /run/netdata/netdata.pid -D
+             ├─2932 "spawn-plugins    " "  " "                        " "  "
+             ├─3099 bash /usr/libexec/netdata/plugins.d/tc-qos-helper.sh 1
+             ├─3116 /usr/libexec/netdata/plugins.d/apps.plugin 1
+             ├─3120 /usr/libexec/netdata/plugins.d/debugfs.plugin 1
+             ├─3121 /usr/libexec/netdata/plugins.d/ebpf.plugin 1
+             ├─3122 /usr/libexec/netdata/plugins.d/go.d.plugin 1
+             ├─3129 /usr/libexec/netdata/plugins.d/network-viewer.plugin 1
+             ├─3131 "spawn-setns                                         " " "
+             └─3137 /usr/libexec/netdata/plugins.d/systemd-journal.plugin 1
+
+Dec 16 16:58:43 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power_supply/BAT0/power_now'
+Dec 16 16:58:44 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power_supply/BAT0/power_now'
+Dec 16 16:58:45 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power_supply/BAT0/power_now'
+Dec 16 16:58:46 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power_supply/BAT0/power_now'
+Dec 16 16:58:47 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power_supply/BAT0/power_now'
+Dec 16 16:58:48 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power_supply/BAT0/power_now'
+Dec 16 16:58:49 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power_supply/BAT0/power_now'
+Dec 16 16:58:50 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power_supply/BAT0/power_now'
+Dec 16 16:58:51 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power_supply/BAT0/power_now'
+Dec 16 16:58:52 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power_supply/BAT0/power_now'
+~
+~
+~
+~
+~
+~
+~
+lines 1-33/33 (END)
+● netdata.service - Real time performance monitoring
+     Loaded: loaded (/usr/lib/systemd/system/netdata.service; enabled; preset: enab>
+     Active: active (running) since Mon 2024-12-16 16:57:09 CET; 1min 43s ago
+    Process: 2926 ExecStartPre=/bin/mkdir -p /var/cache/netdata (code=exited, statu>
+     Active: active (running) since Mon 2024-12-16 16:57:09 CET; 1min 43s ago
+    Process: 2926 ExecStartPre=/bin/mkdir -p /var/cache/netdata (code=exited, statu>
+● netdata.service - Real time performance monitoring
+     Loaded: loaded (/usr/lib/systemd/system/netdata.service; enabled; preset: enab>
+     Active: active (running) since Mon 2024-12-16 16:57:09 CET; 1min 43s ago
+    Process: 2926 ExecStartPre=/bin/mkdir -p /var/cache/netdata (code=exited, statu>
+    Process: 2928 ExecStartPre=/bin/chown -R netdata /var/cache/netdata (code=exite>
+    Process: 2929 ExecStartPre=/bin/mkdir -p /run/netdata (code=exited, status=0/SU>
+    Process: 2930 ExecStartPre=/bin/chown -R netdata /run/netdata (code=exited, sta>
+   Main PID: 2931 (netdata)
+      Tasks: 90 (limit: 11083)
+     Memory: 121.8M
+        CPU: 4.103s
+     CGroup: /system.slice/netdata.service
+             ├─2931 /usr/sbin/netdata -P /run/netdata/netdata.pid -D
+             ├─2932 "spawn-plugins    " "  " "                        " "  "
+             ├─3099 bash /usr/libexec/netdata/plugins.d/tc-qos-helper.sh 1
+             ├─3116 /usr/libexec/netdata/plugins.d/apps.plugin 1
+             ├─3120 /usr/libexec/netdata/plugins.d/debugfs.plugin 1
+             ├─3121 /usr/libexec/netdata/plugins.d/ebpf.plugin 1
+             ├─3122 /usr/libexec/netdata/plugins.d/go.d.plugin 1
+             ├─3129 /usr/libexec/netdata/plugins.d/network-viewer.plugin 1
+             ├─3131 "spawn-setns                                         " " "
+             └─3137 /usr/libexec/netdata/plugins.d/systemd-journal.plugin 1
+
+Dec 16 16:58:43 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power>
+Dec 16 16:58:44 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power>
+Dec 16 16:58:45 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power>
+Dec 16 16:58:46 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power>
+Dec 16 16:58:47 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power>
+Dec 16 16:58:48 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power>
+Dec 16 16:58:49 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power>
+Dec 16 16:58:50 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power>
+Dec 16 16:58:51 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power>
+Dec 16 16:58:52 monitoring.tp1.b1 netdata[2931]: Cannot read file '/sys/class/power>
+lines 5-33/33 (END)
+
+```
+🌞 **Déterminer sur quel port tourne Netdata**
+
+```bash
+[chachat@monitoring ~]$ sudo ss -tlnp | grep netdata
+LISTEN 0      4096       127.0.0.1:8125       0.0.0.0:*    users:(("netdata",pid=2931,fd=46))
+LISTEN 0      4096         0.0.0.0:19999      0.0.0.0:*    users:(("netdata",pid=2931,fd=6))
+LISTEN 0      4096            [::]:19999         [::]:*    users:(("netdata",pid=2931,fd=7))
+LISTEN 0      4096           [::1]:8125          [::]:*    users:(("netdata",pid=2931,fd=45))
+
+Il tourne sur 19999
+```
+🌞 **Visiter l'interface Web**
+
+```
+[chachat@monitoring ~]$ curl -s http://10.1.1.2:19999 > output.txt
+[chachat@monitoring ~]$ head -n 7 output.txt
+<!doctype html><html lang="en" dir="ltr"><head><meta charset="utf-8"/><title>Netdata</title><script>const CONFIG = {
+      cache: {
+        agentInfo: false,
+        cloudToken: true,
+        agentToken: true,
+      }
+    }
+[chachat@mo
+```
+
+
+
+## 3. Ajouter un check
+
+
+
+➜ **Suivre la doc officielle !**
+
+
+🌞 **Ajouter un check**
+
+```
+[chachat@monitoring ~]$ sudo nano /etc/netdata/health.d/tcpcheck.conf
+[sudo] password for chachat:
+[chachat@monitoring ~]$ sudo systemctl restart netdata
+```
+```
+jobs:
+  - name: WEB_web.tp1.b1
+    host: 10.1.1.1
+    ports:
+     2512
+```
+
+🌞 **Ajouter un check**
+```
+[chachat@monitoring ~]$ sudo nano /etc/netdata/health.d/tcpcheck.conf
+[chachat@monitoring ~]$ sudo systemctl restart netdata
+```
+```
+jobs:
+  - name: SSH_web.tp1.b1
+    host: 10.1.1.1
+    ports:
+     22
+
+```
+## 4. Ajouter des alertes
+
+
+
+🌞 **Configurer l'alerting avec Discord**
+
+
+
+🌞 **Tester que ça fonctionne**
+
+
+
+🌞 **Euh... tester que ça fonctionne pour de vrai**
+
+
+
+🌞 **Configurer une alerte quand le port du serveur Web ne répond plus**
+
+
+
+🌞 **Tester que ça fonctionne !**
+
