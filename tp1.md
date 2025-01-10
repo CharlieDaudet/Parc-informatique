@@ -417,6 +417,24 @@ total 4
 
 🌞 **Adapter la conf NGINX**
 
+```
+[chachat@web ~]$ sudo firewall-cmd --permanent --add-port=2512/tcp
+[sudo] password for chachat:
+success
+[chachat@web ~]$ sudo firewall-cmd --reload
+success
+[chachat@web ~]$ sudo firewall-cmd --permanent --remove-port=80/tcp
+success
+[chachat@web ~]$ sudo firewall-cmd --reload
+success
+
+```
+
+
+
+
+
+
 - dans le fichier de conf principal
   - vous supprimerez le bloc `server {}` repéré plus tôt pour que NGINX ne serve plus le site par défaut (parce que ça sert à rien le site par défaut)
   - redémarrez NGINX pour que les changements prennent effet
